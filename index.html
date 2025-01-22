@@ -481,8 +481,8 @@ fb = fb.dropna()
 #qui ci dice che viene calcolto il girno dopo-il giorno prima 
 # solo se la funzione share è vera altrimenti restituisce 0 
 # quindi calcola solo se la nostra strategia è attiva
-#metto lo squeez perchè dio can serve e basta credo per 
-# colpa di yahoo che da roba bidimensionale
+#metto lo squeez serve per 
+# colpa di yahoo che è bidimensionale
 fb['Profit'] = (fb['Shares'] == 1) * (fb['Close1'] - fb['Close'].squeeze())
 fb['Profit'].plot(color='yellow')
 #ti da la somma cumulata per la colonna profit
