@@ -24,31 +24,38 @@
             color: #a0a0a0; /* Colore grigio chiaro per i paragrafi */
         }
 
-         .intro-container {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 20px;
-            text-align: center;
+        .intro-container {
+            text-align: center; /* Centra l'immagine e il testo orizzontalmente */
+            margin-bottom: 100px; /* Spazio sotto il contenitore */
         }
 
         .intro-container img {
-            width: 100%;
-            max-width: 400px;
-            height: auto;
-            object-fit: contain;
+            display: block; /* Rimuove eventuali spazi extra sotto l'immagine */
+            margin: 0 auto; /* Centra l'immagine orizzontalmente */
+            width: 30%; /* Riduce la dimensione dell'immagine */
+            height: auto; /* Mantiene le proporzioni dell'immagine */
+            object-fit: contain; /* Adatta l'immagine senza tagliarla */
+            border-radius: 8px; /* (Facoltativo) Smussa i bordi dell'immagine */
+            margin-bottom: 40px; /* Aggiunge spazio tra l'immagine e il testo */
         }
 
         .intro-container h2 {
-            margin: 0;
-            margin-bottom: 20px; /* Distanza tra questa sezione e quella successiva */
-            margin-top: -120px; /* Sposta il contenuto più in alto */
+            margin-top: 40px; /* Aggiunge spazio sopra il titolo "Chi sono?" */
+            margin-bottom: 20px;
             color: #FFCC00; /* Giallo simile a quello di Bloomberg */
         }
 
-        .intro-container h3 {
-            margin: 5px 0;
-            
+        /* Allinea il titolo "I miei progetti" al centro della pagina */
+        h3 {
+            text-align: center;
+            color: #ffffff; /* Giallo simile a quello di Bloomberg */
+            margin-top: 20px; /* Spazio sopra al titolo */
+            margin-bottom: 20px; /* Spazio sotto il titolo */
+        }
+
+        /* Assicura che il contenuto dei progetti sia anche centrato */
+        .project-container {
+            text-align: center; /* Centra il contenuto dei progetti */
         }
 /* Colore giallo per i titoli dei progetti */
         h4 {
@@ -111,6 +118,11 @@
                 <figure>
                     <img src="IMG_2011 copia.png" alt="Marco Santamaria" />
                 </figure>
+
+                <!-- Divisore tra immagine e testo -->
+                <hr>
+                
+
                 <!-- Testo Introduzione -->
                 <div>
                     <hgroup>
@@ -124,7 +136,7 @@
             </div>
 
             <!-- Sezione dei Progetti -->
-            <h3>I miei progetti</h3>
+            <h3>I MIEI PROGETTI</h3>
             <ul>
                 <li>
                     <h4>Progetto 1: Analisi dei dati finanziari di aziende quotate</h4>
@@ -483,8 +495,8 @@ fb = fb.dropna()
 #qui ci dice che viene calcolto il girno dopo-il giorno prima 
 # solo se la funzione share è vera altrimenti restituisce 0 
 # quindi calcola solo se la nostra strategia è attiva
-#metto lo squeez serve per 
-# colpa di yahoo che è bidimensionale
+#metto lo squeez  per 
+# colpa di yahoo che ha le tabelle bidimensionali
 fb['Profit'] = (fb['Shares'] == 1) * (fb['Close1'] - fb['Close'].squeeze())
 fb['Profit'].plot(color='yellow')
 #ti da la somma cumulata per la colonna profit
@@ -641,6 +653,7 @@ plt.show()
                     <p>Questo progetto ha sviluppato la mia capacità di pensiero e di lavorare in team. Inoltre, grazie al contatto con le aziende, ho potuto migliorare la mia capacità di contrattazione. Il progetto deve essere messo sul mercato a breve, ma poiché non è ancora registrato come proprietà intellettuale, posso fornire solo pochi spunti in caso di un incontro di persona.</p>
                 
                 </li>
+                
                 <div class="badge-base LI-profile-badge" data-locale="it_IT" data-size="medium" data-theme="light" data-type="VERTICAL" data-vanity="marco-santamaria-9b632821a" data-version="v1"><a class="badge-base__link LI-simple-link" href="https://it.linkedin.com/in/marco-santamaria-9b632821a?trk=profile-badge">Marco Santamaria</a></div>
               
             </ul>
