@@ -24,17 +24,19 @@
             color: #a0a0a0; /* Colore grigio chiaro per i paragrafi */
         }
 
-        /* Styling per il layout dell'introduzione */
-        .intro-container {
+         .intro-container {
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
-            gap: 50px; /* Distanza tra l'immagine e il testo */
+            gap: 20px;
+            text-align: center;
         }
+
         .intro-container img {
-            width: 2000px;   /* Imposta la larghezza a 150px */
-            height: 150px;  /* Imposta l'altezza a 150px */
-            object-fit: contain;  /* L'immagine si adatta senza essere tagliata */
-            margin-bottom: 100px; /* Diminuisce la distanza tra l'immagine e il testo */
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            object-fit: contain;
         }
 
         .intro-container h2 {
