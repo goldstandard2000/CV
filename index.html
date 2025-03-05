@@ -106,7 +106,31 @@
         .copy-btn:hover {
             background-color: #555;
         }
+        .download-btn {
+            background-color: #FFCC00; /* Giallo simile a Bloomberg */
+            color: #000000; /* Testo nero */
+            border: none;
+            padding: 8px 15px; /* Ridotto il padding per un bottone più piccolo */
+            font-size: 14px; /* Ridotto il font size */
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background-color 0.3s ease-in-out;
+            text-align: center; /* Allinea il testo al centro */
+            max-width: 200px; /* Imposta la larghezza massima */
+            width: auto; /* Imposta la larghezza automatica per adattarsi al contenuto */
+            margin: 0 auto; /* Centra il bottone orizzontalmente */
+        }
 
+        .download-btn:hover {
+            background-color: #e6b800; /* Tonalità leggermente più scura al passaggio del mouse */
+        }
+        /* Aggiungi questa regola per centrare il bottone nel suo contenitore */
+        section {
+            text-align: center; /* Centra il contenuto del contenitore */
+        }
     </style>
 </head>    
 <body>
@@ -138,207 +162,20 @@
             <!-- Sezione dei Progetti -->
             <h3>I MIEI PROGETTI</h3>
             <ul>
+                <li><!-- Sezione per il Download del PDF -->
+                    <h4>Ricerca "La concorrenza tra imprese: Il caso Volkswagen"</h4>
+                    <p>In questa ricerca ho evidenziato i problemi presenti e futuri che Volkswagen dovrà affrontare per restare nel mercato del automotive.</p>
+                    <button class="download-btn" onclick="window.location.href='La concorrenza tra imprese Il caso Volkswagen.pdf';">
+                        📄 Scarica il PDF
+                    </button>
+                </li>
+                <div style="height: 50px;"></div> <!-- Spazio tra i progetti -->
                 <li>
                     <h4>Progetto 1: Analisi dei dati finanziari di aziende quotate</h4>
                     <p>Ho sviluppato un'analisi dei dati finanziari adattabile a ogni azienda quotata, utilizzando strumenti come Python per prevedere le tendenze future e migliorare le strategie di investimento.</p>
                     <pre id="code1"><code class="language-python">
 import yfinance as yf
-import pandas as pd
-import csv
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy.stats import norm
-from pandas.plotting import scatter_matrix
-import statsmodels.formula.api as smf
-import warnings
-import datetime as dt
-import warnings
-warnings.filterwarnings("ignore")
-pd.set_option('display.max_rows', None)  # Mostra tutte le righe
-pd.set_option('display.max_columns', None)  # Mostra tutte le colonne
-pd.set_option('display.width', None)  # Per evitare la riduzione del testo
-pd.set_option('display.max_colwidth', None)  # Per evitare l'abbattimento del testo delle celle
 
-ticker = 'NVDA'  # Impostiamo il ticker per l'azione che vogliamo analizzare, in questo caso Nvidia
-
-# Data corrente
-oggi = dt.datetime.today()  # Otteniamo la data di oggi
-# Verifica se siamo al 31 gennaio o successivamente nell'anno corrente
-if oggi >= dt.datetime(oggi.year, 1, 31):  # Se la data odierna è uguale o successiva al 31 gennaio
-    ultimo_anno = dt.datetime(oggi.year, 2, 1)  # Impostiamo il 1° febbraio dell'anno corrente
-else:
-    ultimo_anno = dt.datetime(oggi.year-1, 2, 1)  # Altrimenti, mettiamo il 1° febbraio dell'anno precedente
-print(ultimo_anno)
-
-# Calcola la data di inizio come 31 gennaio di 5 anni fa
-primo_anno = ultimo_anno - dt.timedelta(days=5*365)  # Sottrai 5 anni da "ultimo_anno" per avere il punto di inizio
-start_date = primo_anno.strftime('%Y-%m-%d')  # Formatta la data di inizio in formato 'yyyy-mm-dd'
-end_date = ultimo_anno.strftime('%Y-%m-%d')  # Formatta la data di fine in formato 'yyyy-mm-dd'
-
-print("Start Date:", start_date)
-print("End Date:", end_date)
-
-# Scarica i dati giornalieri di NVDA (Nvidia) per l'intervallo di date appena definito
-fb = yf.download(ticker, start=start_date, end=end_date, interval="1d")  # Scarica i dati giornalieri
-
-# Aggiunge la colonna Date per filtrare i dati facilmente
-fb['Date'] = fb.index
-
-# Funzione per ottenere il prezzo di chiusura del 31 gennaio (o il giorno più vicino) di ogni anno
-def get_close_price_for_january_31(x):
-    # Cerca il 31 gennaio nel DataFrame
-    gennaio_31 = x[(x['Date'].dt.month == 1) & (x['Date'].dt.day == 31)]
-    if not gennaio_31.empty:
-        return gennaio_31.iloc[0]  # Se trova il 31 gennaio, restituisce il primo valore trovato
-    else:
-        # Se il 31 gennaio non è presente, cerca il giorno precedente
-        for i in range(1, 32):  # Cerchiamo fino a 31 giorni precedenti
-            giorno_precedente = x[x['Date'].dt.month == 1][x['Date'].dt.day == (31 - i)]
-            if not giorno_precedente.empty:
-                return giorno_precedente.iloc[0]  # Restituisce il primo giorno trovato
-        return None  # Se non trova nulla, restituisce None
-
-# Applica la funzione a ogni gruppo annuale
-gennaio_31_per_anno = fb.groupby(fb['Date'].dt.year).apply(get_close_price_for_january_31)
-# Rimuove eventuali valori nulli (None)
-gennaio_31_per_anno = gennaio_31_per_anno.dropna()
-
-# Converte l'indice degli anni in un formato numerico
-gennaio_31_per_anno.index = gennaio_31_per_anno.index.astype(int)
-
-# Scarica i dati finanziari dell'azienda
-azienda = yf.Ticker(ticker)
-# Bilancio e conto economico dell'azienda
-cont_ec = azienda.financials  # Conto economico (entrate, profitti, ecc.)
-bilancio = azienda.balance_sheet  # Bilancio (attività, passività, capitale proprio)
-rend_fin = azienda.cash_flow  # Flussi di cassa
-dividendi = azienda.dividends  # Dividendi pagati
-
-# Otteniamo il prezzo corrente dell'azione
-prezzo_corrente = azienda.history(period="1d")
-
-# Visualizziamo i dati finanziari
-print('CONTO ECONOMICO\n', cont_ec,'\n')
-print('BILANCIO\n', bilancio,'\n')
-print('RENDICONTO FINANZIARIO\n', rend_fin,'\n')
-print('PREZZO DI OGGI\n', prezzo_corrente,'\n')
-
-# Calcolo di vari indici finanziari
-
-# Ricavi
-ricavi = cont_ec.loc['Total Revenue']
-# Ordina i dati in ordine crescente per anno
-ricavi = ricavi.sort_index()
-# Utile netto
-utile_netto = cont_ec.loc['Net Income']
-# Margine lordo (Gross Profit / Total Revenue) - Percentuale
-margine_lordo = (cont_ec.loc['Gross Profit'] / ricavi) * 100
-# Utile operativo (Operating Income)
-utile_operativo = cont_ec.loc['Operating Income']
-
-# Crescita dei ricavi: calcoliamo la variazione percentuale anno su anno dei ricavi
-crescita_ricavi = ricavi.pct_change().apply(lambda x: f"{x * 100:.2f}%" if pd.notnull(x) else "N/A")
-print("\nCrescita Ricavi:")
-print(crescita_ricavi)
-
-# Margine lordo: Esprimiamo come percentuale
-margine_lordo_formattato = margine_lordo.apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A")
-print("\nMargine Lordo:")
-print(margine_lordo_formattato)
-
-#i dati possono differire da internet dato che solitamente
-#  si usano i dati TTM che sono più attuali e non quelli annuali
-
-# ROE (Return on Equity): ritorno sugli investimenti degli azionisti
-capitale_proprio = bilancio.loc['Common Stock Equity']
-roe = (utile_netto / capitale_proprio) * 100  # Formula base: utile netto / capitale proprio
-
-# ROA (Return on Assets): ritorno sugli attivi totali
-totale_attivo = bilancio.loc['Total Assets']
-roa = (utile_netto / totale_attivo) * 100  # Formula base: utile netto / totale attivo
-
-# ROS (Return on Sales): ritorno sulle vendite
-ros = (utile_operativo / ricavi) * 100  # Formula base: utile operativo / ricavi
-
-# ROD (Return on Debt): ritorno sul debito
-interessi_passivi = cont_ec.loc['Interest Expense']  # Interessi sul debito
-interessi_passivi = interessi_passivi.sort_index()
-debito_totale = bilancio.loc['Total Liabilities Net Minority Interest']  # Debito totale
-debito_totale = debito_totale.sort_index()
-rod = (interessi_passivi / debito_totale) * 100  # Formula base: interessi passivi / debito totale
-
-# Tasso di indebitamento: misura del debito rispetto agli attivi totali
-tasso_indebitamento = debito_totale / totale_attivo
-
-# Current Ratio: misura la capacità di un'azienda di coprire le proprie passività correnti con le attività correnti
-attività_correnti = bilancio.loc['Current Assets']
-attività_correnti=attività_correnti.sort_index()
-passività_correnti = bilancio.loc['Current Liabilities']
-passività_correnti=passività_correnti.sort_index()
-current_ratio = attività_correnti / passività_correnti
-
-# Quick Ratio: simile al Current Ratio ma esclude le rimanenze (magazzino)
-try:
-    rimanenze = bilancio.loc['Inventory']  # Cerca la voce rimanenze
-    rimanenze = rimanenze.sort_index()
-except KeyError:
-    rimanenze = pd.Series(data=["N/A"] * bilancio.shape[1], index=bilancio.columns)  # Se non c'è, usa "N/A"
-    print("\nAttenzione: La voce 'Inventory' non è presente nei dati.")
-
-quick_ratio = (attività_correnti - rimanenze) / passività_correnti
-
-# ROIC (Return on Invested Capital): ritorno sul capitale investito, utile operativo al netto delle imposte
-nopat = utile_operativo * (1 - 0.22)  # Supponendo un'aliquota fiscale del 22%
-capitale_investito = capitale_proprio + debito_totale  # Capitale investito è capitale proprio + debito
-roic = (nopat / capitale_investito) * 100  # Formula base: NOPAT / Capitale investito
-
-# Prezzo per azione al 31 gennaio di ogni anno
-prezzo_per_azione = gennaio_31_per_anno['Close'].squeeze()
-
-# EPS (Earnings Per Share): utile per azione
-eps = utile_netto / bilancio.loc['Ordinary Shares Number']
-eps.index = eps.index.year  # Impostiamo l'indice degli anni
-#serve per modificare l’indice del DataFrame eps in modo che
-# contenga solo l’anno, invece di avere una data completa
-
-# P/E (Price-to-Earnings): rapporto tra prezzo per azione e EPS
-pe_ratio = prezzo_per_azione / eps
-
-# Ricavi per azione
-ricavi_per_azione = ricavi / bilancio.loc['Ordinary Shares Number']
-ricavi_per_azione.index = ricavi_per_azione.index.year
-
-# P/S (Price-to-Sales): rapporto tra prezzo per azione e ricavi per azione
-ps_ratio = prezzo_per_azione / ricavi_per_azione
-
-# Valore contabile per azione: valore netto del patrimonio per azione
-valore_contabile_per_azione = capitale_proprio / bilancio.loc['Ordinary Shares Number']
-valore_contabile_per_azione.index = valore_contabile_per_azione.index.year
-
-# P/B (Price-to-Book): rapporto tra prezzo per azione e valore contabile per azione
-pb_ratio = prezzo_per_azione / valore_contabile_per_azione
-
-# Free Cash Flow per azione: flusso di cassa operativo netto per azione
-free_cash_flow = rend_fin.loc['Cash Flow From Continuing Operating Activities'] - rend_fin.loc['Capital Expenditure']
-fcf_per_azione = free_cash_flow / bilancio.loc['Ordinary Shares Number']
-fcf_per_azione.index = fcf_per_azione.index.year
-
-# P/FCF (Price-to-Free Cash Flow): rapporto tra prezzo per azione e flusso di cassa libero per azione
-pfcf_ratio = prezzo_per_azione / fcf_per_azione
-
-# Stampa dei risultati
-print("\nROE (Return on Equity):\n", roe.apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A"))
-print("\nROA (Return on Assets):\n", roa.apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A"))
-print("\nROS (Return on Sales):\n", ros.apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A"))
-print("\nROD (Return on Debt):\n", rod.apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A"))
-print("\nTasso di Indebitamento:\n", tasso_indebitamento.apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "N/A"))
-print("\nCurrent Ratio:\n", current_ratio.apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "N/A"))
-print("\nQuick Ratio:\n", quick_ratio.apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "N/A"))
-print("\nROIC (Return on Invested Capital)\n:", roic.apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A"))
-print("\nPE ratio:\n", pe_ratio.apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "N/A"))
-print("\nPS ratio:\n", ps_ratio.apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "N/A"))
-print("\nPB ratio:\n", pb_ratio.apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "N/A"))
-print("\nPFCF ratio:\n", pfcf_ratio.apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "N/A"))
                     </code></pre>
                     <button class="copy-btn" onclick="copyCode('code1')">Copia Codice</button>
                 </li>
@@ -348,88 +185,7 @@ print("\nPFCF ratio:\n", pfcf_ratio.apply(lambda x: f"{x:.2f}" if pd.notnull(x) 
                     <p>Ho creato un programma che mi ha permesso di ricevere dei messaggi su telegram delle notizie fiananziarie di aziende che seguo, grazie a un mio server AWS.</p>
                     <pre id="code2"><code class="language-python">
 import finnhub
-from datetime import datetime, timedelta, timezone
-import os
-import requests
-from difflib import SequenceMatcher
 
-# Impostazioni API
-FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY")
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-STOCK_SYMBOL = ["GMM", "ROO", "ENPH", "PYPL", "WBD", "BABA", "GOLD", "DLO", "SHOT"]
-CHAT_ID = os.getenv("CHAT_ID")
-
-
-# Inizializza il client Finnhub
-finnhub_client = finnhub.Client(api_key=FINNHUB_API_KEY)
-
-# Lista per tracciare i titoli delle notizie già inviati
-sent_news_titles = []
-
-# Funzione per ottenere le ultime notizie sull'azione tramite Finnhub
-def fetch_latest_news(stock_symbol, from_date, to_date):
-    try:
-        news = finnhub_client.company_news(stock_symbol, _from=from_date, to=to_date)
-        return news
-    except Exception as e:
-        print(f"Errore nel recupero delle notizie per {stock_symbol}: {e}")
-        return []
-
-# Funzione per inviare messaggi su Telegram utilizzando l'API HTTP
-def send_telegram_message(message):
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    params = {
-        "chat_id": CHAT_ID,
-        "text": message,
-    }
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        print(f"Messaggio inviato: {message}")
-    else:
-        print(f"Errore nell'invio del messaggio: {response.text}")
-
-# Funzione per confrontare due titoli con una soglia di somiglianza
-def is_similar(title1, title2, threshold=0.8):
-    similarity = SequenceMatcher(None, title1, title2).ratio()
-    return similarity >= threshold
-
-# Funzione principale
-def lambda_handler(event, context):
-    try:
-        # Calcola le date di oggi e ieri
-        yesterday = (datetime.now() - timedelta(days=1)).date().strftime("%Y-%m-%d")
-        today = datetime.now().date().strftime("%Y-%m-%d")
-
-        global sent_news_titles  # Usa la lista globale per tracciare i titoli inviati
-
-        for symbol in STOCK_SYMBOL:
-            # Recupera le notizie di ieri
-            yesterday_news = fetch_latest_news(symbol, from_date=yesterday, to_date=yesterday)
-            # Recupera le notizie di oggi
-            today_news = fetch_latest_news(symbol, from_date=today, to_date=today)
-
-            # Combina le notizie di ieri e oggi
-            combined_news = yesterday_news + today_news
-
-            if not combined_news:
-                # Se non ci sono notizie, invia un messaggio su Telegram
-                send_telegram_message(f"Nessuna notizia trovata per il titolo {symbol}.")
-            else:
-                for news in combined_news:
-                    news_title = news['headline']  # Usa il titolo della notizia
-                    news_date = datetime.fromtimestamp(news['datetime'], tz=timezone.utc).date()
-
-                    # Controlla se la notizia è già stata inviata in base al titolo
-                    already_sent = any(is_similar(news_title, sent_title) for sent_title in sent_news_titles)
-
-                    if not already_sent and (news_date == datetime.now().date() or news_date == (datetime.now() - timedelta(days=1)).date()):
-                        # Aggiungi il titolo alla lista delle notizie inviate
-                        sent_news_titles.append(news_title)
-                        message = f"- {news_title}\n{news['url']}"
-                        send_telegram_message(message)
-
-    except Exception as e:
-        print(f"Errore generale: {e}")
                     </code></pre>
                     <button class="copy-btn" onclick="copyCode('code2')">Copia Codice</button>
                 </li>
@@ -439,211 +195,7 @@ def lambda_handler(event, context):
                     <p>Questo progetto ha incluso la costruzione di modelli predittivi per cercare di avere un vantaggio statistico sui movimenti di prezzo</p>
                     <pre id="code3"><code class="language-python">
 import yfinance as yf
-import pandas as pd
-import csv
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy.stats import norm
-from pandas.plotting import scatter_matrix
-import statsmodels.formula.api as smf
-import warnings
-warnings.filterwarnings("ignore")
-#NB USO LA DISTRIBUZIONE T SOLO QUANDO HO UN CAMPIONE PICCOLO
-pd.set_option('display.max_rows', None)  # Mostra tutte le righe
-pd.set_option('display.max_columns', None)  # Mostra tutte le colonne
-pd.set_option('display.width', None)  # Per evitare la riduzione del testo
-pd.set_option('display.max_colwidth', None)  # Per evitare l'abbattimento del testo delle celle
-# Scarica i dati storici di META
-fb = yf.download("META", start="2023-01-01", end="2024-01-31", interval="1d")
-#mi scarica la tabella
-print(fb)
-print(fb['High'].min())
-print(fb.describe())
-#crea una colonna con la differenza di prezzo intaday con il -1 sposto tutto
-# su di uno quindi la casella non sarà più del girono di oggi ma del giorno
-# successivo
-fb ['PriceDiff'] = fb['Close'].shift(-1) - fb['Close']
-print(fb ['PriceDiff'])
-#PriceDiff.loc[ei] > 0: Per ogni indice ei nel DataFrame, verifica se la differenza
-# del prezzo di chiusura (PriceDiff) è maggiore di zero.
-#Se true, la colonna Direction viene impostata a 1 (indicando un aumento).
-#Se false, la colonna Direction viene impostata a 0 
-#(indicando una diminuzione o nessun cambiamento).
-fb['Direction'] = [1 if fb['PriceDiff'].loc[ei] > 0 else 0 for ei in fb.index ]
-print(fb['Direction'])
-fb['MA10']=fb['Close'].rolling(40).mean()
-fb['MA50']=fb['Close'].rolling(60).mean()
-#è impoprtante dargli il colore se no non si vedono
-fb['Close'].plot(label='Close', alpha=0.6)  # Prezzo di chiusura
-fb['MA10'].plot(label='MA10', color='red')  # Media mobile a 40 giorni
-fb['MA50'].plot(label='MA50', color='green')
-plt.show()
 
-
-#creo una strategia
-
-#elimina i valori vuoti da una tabella eliminando quella riga
-fb = fb.dropna()
-#qua sta dicendo che se la MA10 è maggiore della MA50 restituisce 1(vero) 
-# altrimenti 0(falso) e crea la colonna shares con questi valori
-fb['Shares'] = (fb['MA10'] > fb['MA50']).astype(int)
-print(fb['Shares'])
-#creiamo una colonna shiftata di 1 quindi con i valori di close
-# ma sostati in su di una casella (sarebbe il giorno dopo)
-fb['Close1'] = fb['Close'].shift(-1)
-fb = fb.dropna()
-#qui ci dice che viene calcolto il girno dopo-il giorno prima 
-# solo se la funzione share è vera altrimenti restituisce 0 
-# quindi calcola solo se la nostra strategia è attiva
-#metto lo squeez  per 
-# colpa di yahoo che ha le tabelle bidimensionali
-fb['Profit'] = (fb['Shares'] == 1) * (fb['Close1'] - fb['Close'].squeeze())
-fb['Profit'].plot(color='yellow')
-#ti da la somma cumulata per la colonna profit
-fb['wealth'] = fb['Profit'].cumsum()
-fb.tail()
-print(fb)
-#si usa per tracciare una linea orizzontale al valore di Y=0
-plt.axhline(y=0, color='red')
-plt.show()
-fb['wealth'].plot()
-plt.show()
-#usiamo il rendimento logaritmico perchè siamo su grandi range di tempo
-fb['LogReturn'] = np.log(fb['Close']).shift(-1) - np.log(fb['Close'])
-fb = fb.dropna()
-print(fb['LogReturn'])
-#calcolo la media con la funzione mean()
-media=fb['LogReturn'].mean()
-#questo calcola la deviazione standard campionaria ddof=1 serve per dire 
-# che il campione è n-1 quindi campionaria se popolazione mettere 0 (quindi sarebbe solo n)
-sigma = fb['LogReturn'].std(ddof=1)
-#creo la tabella densità
-density = pd.DataFrame()
-#qui troviamo il valore piu grande e piu piccolo della colonna dei ritorni logaritmici.
-#con la funzione arange gli dicaimo che questo sarà il nostro range di valori validi
-# L'intervallo viene esteso leggermente di -0.01 e +0.01 Questo assicura che il range sia
-# un po' più ampio rispetto ai valori effettivi dei rendimenti logaritmici, utile per visualizzazioni
-# come grafici di densità o distribuzioni.
-#Il risultato copre l'intervallo specificato con una risoluzione di 0.001
-
-density['x'] = np.arange(fb['LogReturn'].min()-0.01, fb['LogReturn'].max()+0.01, 0.001)
-#qui calcoliamo la funzione di probabilità della densita usando i dati della colonna
-# x la media e la deviazione standard (sigma) utile poi a fare il grafico a campana
-density['pdf'] = norm.pdf(density['x'], media, sigma)
-print(density['pdf'])
-print(density['x'])
-#sto dicendo di usare qesti dati per fare un grafico istogramma con 50 barre
-# (se aumentiamo es 200 diventa più dettaglaito)
-fb['LogReturn'].hist(bins=50, figsize=(15, 8))
-#dico di aggiungere anche questi dati
-plt.plot(density['x'], density['pdf'], color='red')
-plt.show()
-#serve per calcolare la probabilità cumulata quindi dal inizio campana
-# fino a un punto che vogliamo noi uso regole con il meno della statistica
-# se devo calcolare estremi destri
-#in questo caso stiamo calcolando dal inizio fino al rendimento di -5%
-# quindi la probabilità che il rendimento sia inferiore al -5%
-prob_return1 = norm.cdf(-0.05, media, sigma)
-print('The Probability is ', prob_return1)
-#un anno di borsa sono 220g
-#trovo il totale che guadagnerei in un anno contando che in media
-# guadagno in un giorno x e quindi lo moltiplico per i giorni di un anno
-media220g=220*media
-#anche la deviazione standard di un anno è diversa 
-#se uso **0.5 è come se elevo il numero alla 1/2 
-# che vuol dire fare la radice quadrata di quel numero 
-sigma220g=(220**0.5)*sigma
-#calcolo la probabilità che in un anno di borsa il prezzo scenda più del 40%
-print('The probability of dropping over 40% percento in 220g è', norm.cdf(-0.4, media220g,sigma220g))
-#questa funzione ppf data una probabilità ti restituisce il valore corrispondente
-VaR = norm.ppf(0.05, media, sigma)
-print('Single day value at risk ', VaR)
-meanlist = []
-#con questa funzione genero un elenco di 30 numeri casuali 
-# che devono avere la media circa di 10 e la deviazione standard di circa 5 
-# e la aggiungo la media calcolata alla lista
-for t in range(1000):
-    Fstsample = pd.DataFrame(np.random.normal(10, 5, size=30))
-    meanlist.append(Fstsample[0].mean())
-collection=pd.DataFrame()
-collection['meanlist']=meanlist
-#density =true normalizza l'istogramma in modo che l'area delle barre 
-# sia una densità e non un valore assoluto
-collection['meanlist'].hist(bins=100, density=True, figsize=(15,8))
-plt.show()
-
-
-sample_size = fb['LogReturn'].shape[0]
-sample_mean = fb['LogReturn'].mean()
-sample_std = fb['LogReturn'].std(ddof=1) / sample_size**0.5
-print(sample_size, sample_mean, sample_std)
-
-#se vogliamo i valori scegliendo lo z-score es 90% 
-# ti ridà il valore numerico nella tavola z
-z_left=norm.ppf(0.05)
-z_right=norm.ppf(0.95)
-print(z_left,z_right)
-#qui mi da il valore numerico di variazione di prezzo corrispondente ai due intervalli
-interval_left=sample_mean+z_left*sample_std
-interval_right=sample_mean+z_right*sample_std
-print('90% jinterval is ', interval_left, interval_right)
-
-print(type(z_left))  # Dovrebbe restituire: <class 'float'>
-print(type(z_right))  # Dovrebbe restituire: <class 'float'>
-
-#passiamo a fare il test di ipotesi
-#hp0= il rendimento medio è 0 
-#hp1= il rendimento medio è diverso da 0
-#qui usiamo il calcolo per il test di ipotesi per hp=0
-#uso livello di sinificatività più adatto a me es 10% che è molto più favorevole al h1
-zhat=(sample_mean-0)/(sample_std)
-print(zhat)
-if zhat<= z_left:
-    print('accettare h1 minore in negativo')
-elif zhat>= z_right:
-    print('accettare h1 maggiore in positivo')
-else:
-    print('accettare h0')
-    
-#qui mi da la covarianza tra ognuni colonna
-print(fb.cov())
-#qui mi da la corellazione tra ogni colonna
-fb.corr()
-#qui mi da il grafico di ciascuna colonna e
-# dei punti rispettivi per vedere se c'è una funzione lineare
-sm=scatter_matrix(fb, figsize=(10,10))
-plt.show()
-#posso anche farlo con solo due colonne
-fb.plot(kind='scatter',x='Volume', y='High', figsize=(10,10))
-plt.show()
-
-#ora trovo la regressione lineare per il simbolo ~ usare alt126
-#il modello usa come x il volume e come y il prezzo di chiusura
-model = smf.ols(formula='Close~Volume', data=fb).fit()
-#questo ti restituisce i valori del modello occhio non della
-#  tabella ma del modello (summary) e quindi mi restituisce
-#  il primo valore della riga 1 e 2
-b0_ols = model.params.iloc[0]
-b1_ols = model.params.iloc[1]
-print(b0_ols,b1_ols)
-#qui creo una colonna con i risultati della regressione posso aggiungerla
-#  al grafico per avere gia la regressione lineare ma con il comando 
-# illustrato dopo è più semplice e graficamente intuitivo
-fb['BestResponse']= b0_ols+(b1_ols*fb['Volume'])
-fb.plot(kind='scatter', x='Volume', y='Close', figsize=(10, 10), color='g')
-fb.plot()
-plt.show()
-#mi restituisce il recap di tutti i dati del mio modello di regressione
-print(model.summary())
-#creo il grafico scatter
-plt.scatter(fb['Volume'], fb['Close'], label="Dati reali")
-#aggiungo la retta di regressione con la funzione predict
-plt.plot(fb['Volume'], model.predict(fb), color='red', label="Regressione")
-plt.xlabel("Volume")
-plt.ylabel("Prezzo di chiusura")
-plt.title("Regressione Lineare: Close ~ Volume")
-plt.legend()
-plt.show()
                     </code></pre>
                     <button class="copy-btn" onclick="copyCode('code3')">Copia Codice</button>
                 </li>
