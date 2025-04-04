@@ -474,209 +474,185 @@ except Exception as e:
                     <pre id="code3"><code class="language-python">
 import yfinance as yf
 import pandas as pd
-import csv
-import matplotlib.pyplot as plt
 import numpy as np
-from scipy.stats import norm
-from pandas.plotting import scatter_matrix
-import statsmodels.formula.api as smf
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.linear_model import LinearRegression
+from datetime import datetime, timedelta
 import warnings
 warnings.filterwarnings("ignore")
-#NB USO LA DISTRIBUZIONE T SOLO QUANDO HO UN CAMPIONE PICCOLO
-pd.set_option('display.max_rows', None)  # Mostra tutte le righe
-pd.set_option('display.max_columns', None)  # Mostra tutte le colonne
-pd.set_option('display.width', None)  # Per evitare la riduzione del testo
-pd.set_option('display.max_colwidth', None)  # Per evitare l'abbattimento del testo delle celle
-# Scarica i dati storici di META
-fb = yf.download("META", start="2023-01-01", end="2024-01-31", interval="1d")
-#mi scarica la tabella
-print(fb)
-print(fb['High'].min())
-print(fb.describe())
-#crea una colonna con la differenza di prezzo intaday con il -1 sposto tutto
-# su di uno quindi la casella non sarà più del girono di oggi ma del giorno
-# successivo
-fb ['PriceDiff'] = fb['Close'].shift(-1) - fb['Close']
-print(fb ['PriceDiff'])
-#PriceDiff.loc[ei] > 0: Per ogni indice ei nel DataFrame, verifica se la differenza
-# del prezzo di chiusura (PriceDiff) è maggiore di zero.
-#Se true, la colonna Direction viene impostata a 1 (indicando un aumento).
-#Se false, la colonna Direction viene impostata a 0 
-#(indicando una diminuzione o nessun cambiamento).
-fb['Direction'] = [1 if fb['PriceDiff'].loc[ei] > 0 else 0 for ei in fb.index ]
-print(fb['Direction'])
-fb['MA10']=fb['Close'].rolling(40).mean()
-fb['MA50']=fb['Close'].rolling(60).mean()
-#è impoprtante dargli il colore se no non si vedono
-fb['Close'].plot(label='Close', alpha=0.6)  # Prezzo di chiusura
-fb['MA10'].plot(label='MA10', color='red')  # Media mobile a 40 giorni
-fb['MA50'].plot(label='MA50', color='green')
-plt.show()
+import requests
+from statsmodels.tsa.seasonal import seasonal_decompose
+# Imposta il ticker del titolo principale
+ticker = 'AAPL'
 
+# Definisci l'intervallo di date
+start_date = '2019-01-31'
+end_date = '2024-01-31'
 
-#creo una strategia
-
-#elimina i valori vuoti da una tabella eliminando quella riga
-fb = fb.dropna()
-#qua sta dicendo che se la MA10 è maggiore della MA50 restituisce 1(vero) 
-# altrimenti 0(falso) e crea la colonna shares con questi valori
-fb['Shares'] = (fb['MA10'] > fb['MA50']).astype(int)
-print(fb['Shares'])
-#creiamo una colonna shiftata di 1 quindi con i valori di close
-# ma sostati in su di una casella (sarebbe il giorno dopo)
-fb['Close1'] = fb['Close'].shift(-1)
-fb = fb.dropna()
-#qui ci dice che viene calcolto il girno dopo-il giorno prima 
-# solo se la funzione share è vera altrimenti restituisce 0 
-# quindi calcola solo se la nostra strategia è attiva
-#metto lo squeez perchè dio can serve e basta credo per 
-# colpa di yahoo che da roba bidimensionale
-fb['Profit'] = (fb['Shares'] == 1) * (fb['Close1'] - fb['Close'].squeeze())
-fb['Profit'].plot(color='yellow')
-#ti da la somma cumulata per la colonna profit
-fb['wealth'] = fb['Profit'].cumsum()
-fb.tail()
-print(fb)
-#si usa per tracciare una linea orizzontale al valore di Y=0
-plt.axhline(y=0, color='red')
-plt.show()
-fb['wealth'].plot()
-plt.show()
-#usiamo il rendimento logaritmico perchè siamo su grandi range di tempo
-fb['LogReturn'] = np.log(fb['Close']).shift(-1) - np.log(fb['Close'])
-fb = fb.dropna()
-print(fb['LogReturn'])
-#calcolo la media con la funzione mean()
-media=fb['LogReturn'].mean()
-#questo calcola la deviazione standard campionaria ddof=1 serve per dire 
-# che il campione è n-1 quindi campionaria se popolazione mettere 0 (quindi sarebbe solo n)
-sigma = fb['LogReturn'].std(ddof=1)
-#creo la tabella densità
-density = pd.DataFrame()
-#qui troviamo il valore piu grande e piu piccolo della colonna dei ritorni logaritmici.
-#con la funzione arange gli dicaimo che questo sarà il nostro range di valori validi
-# L'intervallo viene esteso leggermente di -0.01 e +0.01 Questo assicura che il range sia
-# un po' più ampio rispetto ai valori effettivi dei rendimenti logaritmici, utile per visualizzazioni
-# come grafici di densità o distribuzioni.
-#Il risultato copre l'intervallo specificato con una risoluzione di 0.001
-
-density['x'] = np.arange(fb['LogReturn'].min()-0.01, fb['LogReturn'].max()+0.01, 0.001)
-#qui calcoliamo la funzione di probabilità della densita usando i dati della colonna
-# x la media e la deviazione standard (sigma) utile poi a fare il grafico a campana
-density['pdf'] = norm.pdf(density['x'], media, sigma)
-print(density['pdf'])
-print(density['x'])
-#sto dicendo di usare qesti dati per fare un grafico istogramma con 50 barre
-# (se aumentiamo es 200 diventa più dettaglaito)
-fb['LogReturn'].hist(bins=50, figsize=(15, 8))
-#dico di aggiungere anche questi dati
-plt.plot(density['x'], density['pdf'], color='red')
-plt.show()
-#serve per calcolare la probabilità cumulata quindi dal inizio campana
-# fino a un punto che vogliamo noi uso regole con il meno della statistica
-# se devo calcolare estremi destri
-#in questo caso stiamo calcolando dal inizio fino al rendimento di -5%
-# quindi la probabilità che il rendimento sia inferiore al -5%
-prob_return1 = norm.cdf(-0.05, media, sigma)
-print('The Probability is ', prob_return1)
-#un anno di borsa sono 220g
-#trovo il totale che guadagnerei in un anno contando che in media
-# guadagno in un giorno x e quindi lo moltiplico per i giorni di un anno
-media220g=220*media
-#anche la deviazione standard di un anno è diversa 
-#se uso **0.5 è come se elevo il numero alla 1/2 
-# che vuol dire fare la radice quadrata di quel numero 
-sigma220g=(220**0.5)*sigma
-#calcolo la probabilità che in un anno di borsa il prezzo scenda più del 40%
-print('The probability of dropping over 40% percento in 220g è', norm.cdf(-0.4, media220g,sigma220g))
-#questa funzione ppf data una probabilità ti restituisce il valore corrispondente
-VaR = norm.ppf(0.05, media, sigma)
-print('Single day value at risk ', VaR)
-meanlist = []
-#con questa funzione genero un elenco di 30 numeri casuali 
-# che devono avere la media circa di 10 e la deviazione standard di circa 5 
-# e la aggiungo la media calcolata alla lista
-for t in range(1000):
-    Fstsample = pd.DataFrame(np.random.normal(10, 5, size=30))
-    meanlist.append(Fstsample[0].mean())
-collection=pd.DataFrame()
-collection['meanlist']=meanlist
-#density =true normalizza l'istogramma in modo che l'area delle barre 
-# sia una densità e non un valore assoluto
-collection['meanlist'].hist(bins=100, density=True, figsize=(15,8))
-plt.show()
-
-
-sample_size = fb['LogReturn'].shape[0]
-sample_mean = fb['LogReturn'].mean()
-sample_std = fb['LogReturn'].std(ddof=1) / sample_size**0.5
-print(sample_size, sample_mean, sample_std)
-
-#se vogliamo i valori scegliendo lo z-score es 90% 
-# ti ridà il valore numerico nella tavola z
-z_left=norm.ppf(0.05)
-z_right=norm.ppf(0.95)
-print(z_left,z_right)
-#qui mi da il valore numerico di variazione di prezzo corrispondente ai due intervalli
-interval_left=sample_mean+z_left*sample_std
-interval_right=sample_mean+z_right*sample_std
-print('90% jinterval is ', interval_left, interval_right)
-
-print(type(z_left))  # Dovrebbe restituire: <class 'float'>
-print(type(z_right))  # Dovrebbe restituire: <class 'float'>
-
-#passiamo a fare il test di ipotesi
-#hp0= il rendimento medio è 0 
-#hp1= il rendimento medio è diverso da 0
-#qui usiamo il calcolo per il test di ipotesi per hp=0
-#uso livello di sinificatività più adatto a me es 10% che è molto più favorevole al h1
-zhat=(sample_mean-0)/(sample_std)
-print(zhat)
-if zhat<= z_left:
-    print('accettare h1 minore in negativo')
-elif zhat>= z_right:
-    print('accettare h1 maggiore in positivo')
-else:
-    print('accettare h0')
+# Scarica i dati del titolo principale
+df = yf.download(ticker, start=start_date, end=end_date)
+print(df.shape)
+# Funzione per trovare i concorrenti tramite l'API Finnhub
+def trova_concorrenti_finhub(ticker, api_key):
+    """Ottiene i concorrenti di un'azienda utilizzando FinHub API e li restituisce in una lista"""
+    url = f"https://finnhub.io/api/v1/stock/peers?symbol={ticker}&token={api_key}"
     
-#qui mi da la covarianza tra ognuni colonna
-print(fb.cov())
-#qui mi da la corellazione tra ogni colonna
-fb.corr()
-#qui mi da il grafico di ciascuna colonna e
-# dei punti rispettivi per vedere se c'è una funzione lineare
-sm=scatter_matrix(fb, figsize=(10,10))
-plt.show()
-#posso anche farlo con solo due colonne
-fb.plot(kind='scatter',x='Volume', y='High', figsize=(10,10))
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        data = response.json()
+        if data:
+            concorrenti = data  # Salva i concorrenti in una lista
+            return concorrenti
+        else:
+            print("Nessun concorrente trovato.")
+            return []
+    else:
+        print("Errore nella richiesta:", response.status_code, response.text)
+        return []
+
+# Funzione per scaricare i dati dei titoli
+def scarica_dati(tickers, start_date, end_date):
+    """Scarica i dati di chiusura di più titoli azionari usando yfinance"""
+    data = yf.download(tickers, start=start_date, end=end_date)['Close']
+    return data
+
+# ESECUZIONE
+api_key = input("Inserisci la tua chiave API di Finnhub: ")
+
+ticker = "AAPL"  # Cambia con il ticker desiderato
+
+# Trova i concorrenti tramite l'API
+competitor_tickers = trova_concorrenti_finhub(ticker, api_key)
+
+# Verifica se la lista dei concorrenti è valida
+if competitor_tickers:
+    print("\nConcorrenti trovati:")
+    for competitor in competitor_tickers:
+        print(competitor)
+
+    # Aggiungi il ticker del titolo principale alla lista dei concorrenti
+    competitor_tickers.append(ticker)
+
+    # Definisci l'intervallo di date
+    start_date = '2019-01-01'
+    end_date = '2024-01-01'
+
+    # Scarica i dati di chiusura dei titoli
+    competitor_data = scarica_dati(competitor_tickers, start_date, end_date)
+
+    # Calcola la matrice di correlazione
+    correlation_matrix = competitor_data.corr()
+
+    # Grafico della matrice di correlazione
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt='.2f')
+    plt.title('Matrice di Correlazione dei Prezzi di Chiusura')
+    plt.show()
+
+else:
+    print("Impossibile procedere con l'analisi senza concorrenti.")
+
+df['Close'] = df['Close'].squeeze()  # Assicura che sia unidimensionale
+
+# Regressione lineare sul prezzo
+df = df.dropna()
+X = np.arange(len(df)).reshape(-1, 1)
+y = df['Close'].values
+model = LinearRegression().fit(X, y)
+df['Trend'] = model.predict(X)
+
+# Calcola le medie mobili
+df['MA20'] = df['Close'].rolling(window=20).mean()
+df['MA50'] = df['Close'].rolling(window=50).mean()
+df['MA200'] = df['Close'].rolling(window=200).mean()
+
+# Formula della retta di regressione
+slope = model.coef_[0]
+intercept = model.intercept_
+print("Formula della retta di regressione: y = " + str(round(float(slope), 2)) + "x + " + str(round(float(intercept), 2)))
+
+
+# Strategie di trading
+def apply_strategy(signal_col):
+    df[f'Daily_Return_{signal_col}'] = df['Close'].pct_change()
+    df[f'Strategy_Return_{signal_col}'] = df[signal_col].shift(1) * df[f'Daily_Return_{signal_col}']
+    df[f'Portfolio_Value_{signal_col}'] = 100 * (1 + df[f'Strategy_Return_{signal_col}']).cumprod()
+ # Calcola il rendimento percentuale sui 100€ investiti con una semplice divisione
+    df[f'Percent_Return_{signal_col}'] = df[f'Portfolio_Value_{signal_col}'] / 100 * 100 - 100
+
+# Medie Mobili
+df['Signal_MA'] = np.where(df['MA20'] > df['MA50'], 1, -1)
+apply_strategy('Signal_MA')
+
+# RSI
+delta = df['Close'].diff()
+gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+rs = gain / loss
+df['RSI'] = 100 - (100 / (1 + rs))
+df['Signal_RSI'] = np.where(df['RSI'] < 30, 1, np.where(df['RSI'] > 70, -1, 0))
+apply_strategy('Signal_RSI')
+
+# MACD
+df['EMA12'] = df['Close'].ewm(span=12, adjust=False).mean()
+df['EMA26'] = df['Close'].ewm(span=26, adjust=False).mean()
+df['MACD'] = df['EMA12'] - df['EMA26']
+df['Signal_Line'] = df['MACD'].ewm(span=9, adjust=False).mean()
+df['Signal_MACD'] = np.where(df['MACD'] > df['Signal_Line'], 1, -1)
+apply_strategy('Signal_MACD')
+
+
+
+# Golden Cross
+df['Signal_GoldenCross'] = np.where(df['MA50'] > df['MA200'], 1, -1)
+apply_strategy('Signal_GoldenCross')
+
+# Grafico comparativo
+plt.figure(figsize=(14, 7))
+strategies = ['MA', 'RSI', 'MACD', 'GoldenCross']
+for strat in strategies:
+    plt.plot(df.index, df[f'Portfolio_Value_Signal_{strat}'], label=strat)
+plt.title(f'Backtest Strategie di Trading su {ticker}')
+plt.xlabel('Data')
+plt.ylabel('Valore del Portafoglio (€)')
+plt.legend()
 plt.show()
 
-#ora trovo la regressione lineare per il simbolo ~ usare alt126
-#il modello usa come x il volume e come y il prezzo di chiusura
-model = smf.ols(formula='Close~Volume', data=fb).fit()
-#questo ti restituisce i valori del modello occhio non della
-#  tabella ma del modello (summary) e quindi mi restituisce
-#  il primo valore della riga 1 e 2
-b0_ols = model.params.iloc[0]
-b1_ols = model.params.iloc[1]
-print(b0_ols,b1_ols)
-#qui creo una colonna con i risultati della regressione posso aggiungerla
-#  al grafico per avere gia la regressione lineare ma con il comando 
-# illustrato dopo è più semplice e graficamente intuitivo
-fb['BestResponse']= b0_ols+(b1_ols*fb['Volume'])
-fb.plot(kind='scatter', x='Volume', y='Close', figsize=(10, 10), color='g')
-fb.plot()
-plt.show()
-#mi restituisce il recap di tutti i dati del mio modello di regressione
-print(model.summary())
-#creo il grafico scatter
-plt.scatter(fb['Volume'], fb['Close'], label="Dati reali")
-#aggiungo la retta di regressione con la funzione predict
-plt.plot(fb['Volume'], model.predict(fb), color='red', label="Regressione")
-plt.xlabel("Volume")
-plt.ylabel("Prezzo di chiusura")
-plt.title("Regressione Lineare: Close ~ Volume")
-plt.legend()
+
+
+# Ranking delle performance
+performance = {}
+for strat in strategies:
+    final_value = df[f'Portfolio_Value_Signal_{strat}'].iloc[-1]
+    percent_return = df[f'Percent_Return_Signal_{strat}'].iloc[-1]
+    daily_returns = df[f'Strategy_Return_Signal_{strat}'].dropna()
+    sharpe_ratio = daily_returns.mean() / daily_returns.std() * np.sqrt(252)
+    max_drawdown = (df[f'Portfolio_Value_Signal_{strat}'] / df[f'Portfolio_Value_Signal_{strat}'].cummax() - 1).min()
+    performance[strat] = {'Final Value': final_value, 'Percent Return': percent_return, 'Sharpe Ratio': sharpe_ratio, 'Max Drawdown': max_drawdown}
+
+performance_df = pd.DataFrame(performance).T.sort_values(by='Final Value', ascending=False)
+print(performance_df)
+
+
+# Raggruppa per mese e calcola la media (frequenza mensile)
+df_monthly = df['Close'].resample('M').mean()
+
+# Decomposizione stagionale (modello additivo, periodo annuale)
+result = seasonal_decompose(df_monthly, model='additive', period=12)
+
+# Estrai il componente stagionale
+seasonal = result.seasonal
+
+# Crea un grafico con i mesi come linea del tempo
+plt.figure(figsize=(10, 6))
+seasonal.plot()
+plt.title('Componente Stagionale del Prezzo di Chiusura (con Mesi come Linea del Tempo)', fontsize=16)
+plt.xlabel('Mese', fontsize=12)
+plt.ylabel('Componente Stagionale', fontsize=12)
+plt.xticks(rotation=45)
+plt.tight_layout()
 plt.show()
 
                     </code></pre>
